@@ -367,5 +367,5 @@ on [PyPI], the following steps can be used to release a new version for
 ```{todo} Please review and change the following definitions:
 ```
 
-[repository]: https://github.com/<USERNAME>/fontlab_export_tools
-[issue tracker]: https://github.com/<USERNAME>/fontlab_export_tools/issues
+[repository]: https://github.com/fontlaborg/fontlab-export-tools
+[issue tracker]: https://github.com/fontlaborg/fontlab-export-tools/issues

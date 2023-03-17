@@ -1,0 +1,5 @@
+from PythonQt.QtGui import QGuiApplication
+
+qApp = QGuiApplication.instance()
+qApp.processEvents()
+qApp.quit()
