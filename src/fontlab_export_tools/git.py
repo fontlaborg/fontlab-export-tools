@@ -1,45 +1,52 @@
+from datetime import datetime
 from git import Repo
-from pathlib import Path
-import yaml
+
 from .utils import read_config
 
-from datetime import datetime
 
+class GitHandler:
+    def __init__(self, config_path):
+        self.config = read_config(config_path)
+        self.public_repo_folder = self.config.public_repo_folder
+        self.public_repo_url = self.config.public_repo_url
+        try:
+            self.repo = Repo(self.public_repo_folder)
+        except Exception:
+            self.repo = None
 
-def _commit_message():
-    now = datetime.now()
-    timestamp_str = now.strftime("%Y-%m-%d %H:%M:%S")
-    return f"Commit on {timestamp_str}"
+    @staticmethod
+    def _commit_message():
+        now = datetime.now()
+        timestamp_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        return f"Commit on {timestamp_str}"
 
+    def clone(self):
+        self.repo = Repo.clone_from(self.public_repo_url, self.public_repo_folder)
 
-def clone_or_pull(config_path):
-    config = read_config(config_path)
-    public_repo_folder = config.public_repo_folder
-    public_repo_url = config.public_repo_url
-    if not public_repo_folder.exists():
-        Repo.clone_from(public_repo_url, public_repo_folder)
-    else:
-        repo = Repo(public_repo_folder)
-        origin = repo.remote(name="origin")
+    def pull(self):
+        origin = self.repo.remote(name="origin")
         origin.pull()
 
+    def clone_or_pull(self):
+        if not self.public_repo_folder.exists():
+            self.clone()
+        else:
+            self.pull()
 
-def commit_and_push(config_path, msg=None):
-    commit_message = msg or _commit_message()
-    # Read the config file
-    config = read_config(config_path)
-    public_repo_folder = config.public_repo_folder
-    public_repo_url = config.public_repo_url
+    def commit(self, msg=None):
+        commit_message = msg or self._commit_message()
+        for untracked_file in self.repo.untracked_files:
+            self.repo.index.add(untracked_file)
+        self.repo.index.commit(commit_message)
 
-    # Create a GitPython repository object
-    repo = Repo(public_repo_folder)
+    def push(self):
+        self.repo.remote(name="origin").push()
 
-    # Add all files to the index
-    repo.index.add("*")
+    def commit_and_push(self, msg=None):
+        self.commit(msg)
+        self.push()
 
-    # Create a new commit
-    repo.index.commit(commit_message)
-
-    # Push the changes to the remote repository
-    origin = repo.remote(name="origin")
-    origin.push()
+    def sync(self, msg=None):
+        self.clone_or_pull()
+        self.commit(msg)
+        self.push()

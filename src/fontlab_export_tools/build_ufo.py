@@ -61,69 +61,91 @@ class FontBuilder:
             "postscriptDefaultCharacter",
             "postscriptWindowsCharacterSet",
             "_openTypeOS2WidthClass",
-            "styleName",
             "styleMapStyleName",
         ]
 
-    def patch(self, ufo_path, ref_path):
-        ufo = DFont(ufo_path)
-        old_ufo = DFont(ufo_path)
-        info = ufo.info
-        # print(f"{info=}")
-        info.openTypeOS2Type = []
-        ref = TTFont(ref_path)
-        rufo = DFont()
-        # print(f"{rufo=}")
+    def load_fonts(self, mod_path, ref_path):
+        self.mod_path = mod_path
+        self.mod_ufo = DFont(self.mod_path)
+        self.mod_info = self.mod_ufo.info
+        self.mod_cmap = {
+            uni: mod_glyph.name
+            for mod_glyph in self.mod_ufo
+            for uni in mod_glyph.unicodes
+        }
+        self.ref_path = ref_path
+        self.ref_ttx = TTFont(self.ref_path)
+        self.ref_ufo = DFont()
         extractFontFromOpenType(
-            ref_path,
-            rufo,
+            self.ref_path,
+            self.ref_ufo,
             doInfo=True,
             doGlyphs=True,
             doKerning=True,
             doGlyphOrder=True,
             doInstructions=False,
         )
-        for copy_attr in self.copy_info:
-            rattr = getattr(rufo.info, copy_attr)
-            attr = getattr(info, copy_attr)
-            if rattr and attr != rattr:
-                print(f"Updating `info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`")
-                setattr(info, copy_attr, rattr)
-        for copy_attr, rattr in self.config.get("fontinfo", {}).items():
-            attr = getattr(info, copy_attr)
-            if attr != rattr:
-                print(f"Updating `info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`")
-                setattr(info, copy_attr, rattr)
+        self.ref_info = self.ref_ufo.info
+        self.ref_cmap = {
+            uni: mod_glyph.name
+            for mod_glyph in self.ref_ufo
+            for uni in mod_glyph.unicodes
+        }
 
-        rcmap = {uni: glyph.name for glyph in rufo for uni in glyph.unicodes}
-        cmap = {uni: glyph.name for glyph in ufo for uni in glyph.unicodes}
-        for uni, name in rcmap.items():
-            rglyph = rufo[name]
-            if uni in cmap:
-                glyph = ufo[cmap[uni]]
-                if glyph.width != rglyph.width:
-                    print(
-                        f"Updating `{name}` width from `{glyph.width}` to `{rglyph.width}`"
-                    )
-                    glyph.width = rglyph.width
-            elif name in ufo.keys():
-                glyph = ufo[name]
+    def save_font(self):
+        self.mod_ufo.save()
+
+    def copy_info(self):
+        for copy_attr in self.copy_info:
+            rattr = getattr(self.ref_ufo.info, copy_attr)
+            attr = getattr(self.mod_info, copy_attr)
+            if (type(rattr) == type(attr)) and attr != rattr:
                 print(
-                    f"Updating unicodes for {name} from {glyph.unicodes} to {rglyph.unicodes}"
+                    f"Updating `self.mod_info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
                 )
-                glyph.unicodes = rglyph.unicodes
+                setattr(self.mod_info, copy_attr, rattr)
+        for copy_attr, rattr in self.config.get("fontinfo", {}).items():
+            attr = getattr(self.mod_info, copy_attr)
+            if attr != rattr:
+                print(
+                    f"Updating `self.mod_info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
+                )
+                setattr(self.mod_info, copy_attr, rattr)
+        self.mod_info.openTypeOS2Type = []
+
+    def copy_or_add_glyphs(self):
+        for uni, name in self.ref_cmap.items():
+            ref_glyph = self.ref_ufo[name]
+            if uni in self.mod_cmap:
+                mod_glyph = self.mod_ufo[self.mod_cmap[uni]]
+                if mod_glyph.width != ref_glyph.width:
+                    print(
+                        f"Updating `{name}` width from `{mod_glyph.width}` to `{ref_glyph.width}`"
+                    )
+                    mod_glyph.width = ref_glyph.width
+            elif name in self.mod_ufo.keys():
+                mod_glyph = self.mod_ufo[name]
+                print(
+                    f"Updating unicodes for {name} from {mod_glyph.unicodes} to {ref_glyph.unicodes}"
+                )
+                mod_glyph.unicodes = ref_glyph.unicodes
             else:
-                glyph = Glyph()
-                glyph.name = name
-                glyph.unicodes = rglyph.unicodes
-                glyph.width = rglyph.width
-                print(f"Adding glyph `{name}`")
-                ufo.insertGlyph(glyph)
-        ufo.save()
+                mod_glyph = Glyph()
+                mod_glyph.name = name
+                mod_glyph.unicodes = ref_glyph.unicodes
+                mod_glyph.width = ref_glyph.width
+                print(f"Adding mod_glyph `{name}`")
+                self.mod_ufo.insertGlyph(mod_glyph)
+
+    def patch(self, mod_path, ref_path):
+        self.load_fonts(mod_path, ref_path)
+        self.copy_info()
+        self.copy_or_add_glyphs()
+        self.save_font()
 
     def apply_patches(self):
-        for patch in self.config.ufo_patches:
-            self.patch(patch["ufo_path"], patch["ref_path"])
+        for patch in self.config.fonts:
+            self.patch(mod_path=patch["ufo_path"], ref_path=patch["ref_path"])
 
 
 def build_ufo(config_path):
