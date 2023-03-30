@@ -13,8 +13,5 @@ def make(config_path, command="build"):
             )
         except subprocess.CalledProcessError as e:
             print(f"Error running `make {command}` in `{public_repo_folder}`: {e}")
-            result = False
     else:
         print("Error: `public_repo_folder` not in config.")
-        result = False
-    return result

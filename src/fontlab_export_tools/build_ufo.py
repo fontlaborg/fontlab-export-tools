@@ -95,7 +95,7 @@ class FontBuilder:
     def save_font(self):
         self.mod_ufo.save()
 
-    def copy_info(self):
+    def update_font_info(self):
         for copy_attr in self.copy_info:
             rattr = getattr(self.ref_ufo.info, copy_attr)
             attr = getattr(self.mod_info, copy_attr)
@@ -113,7 +113,7 @@ class FontBuilder:
                 setattr(self.mod_info, copy_attr, rattr)
         self.mod_info.openTypeOS2Type = []
 
-    def copy_or_add_glyphs(self):
+    def update_glyphs(self):
         for uni, name in self.ref_cmap.items():
             ref_glyph = self.ref_ufo[name]
             if uni in self.mod_cmap:
@@ -139,8 +139,8 @@ class FontBuilder:
 
     def patch(self, mod_path, ref_path):
         self.load_fonts(mod_path, ref_path)
-        self.copy_info()
-        self.copy_or_add_glyphs()
+        self.update_font_info()
+        self.update_glyphs()
         self.save_font()
 
     def apply_patches(self):
