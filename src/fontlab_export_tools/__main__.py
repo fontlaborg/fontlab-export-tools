@@ -5,6 +5,7 @@ from pathlib import Path
 from .git import GitHandler
 from .build_ufo import build_ufo
 from .build_fl import build_fl
+from .make import make
 
 
 def clone_or_pull(config_path):
@@ -34,6 +35,7 @@ def main():
 
     - build_fl
     - build_ufo
+    - make
     - pull
     - push
     - sync
@@ -43,6 +45,7 @@ def main():
         {
             "build_fl": build_fl,
             "build_ufo": build_ufo,
+            "make": make,
             "pull": clone_or_pull,
             "push": commit_and_push,
             "sync": sync,
