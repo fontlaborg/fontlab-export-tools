@@ -1,5 +1,6 @@
 from datetime import datetime
 from git import Repo
+from pathlib import Path
 
 from .utils import read_config
 
@@ -21,6 +22,7 @@ class GitHandler:
         return f"Commit on {timestamp_str}"
 
     def clone(self):
+        Path(self.public_repo_folder).parent.mkdir(parents=True, exist_ok=True)
         self.repo = Repo.clone_from(self.public_repo_url, self.public_repo_folder)
 
     def pull(self):
