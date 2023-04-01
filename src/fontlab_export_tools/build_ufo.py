@@ -138,7 +138,7 @@ class FontBuilder:
                 self.mod_ufo.insertGlyph(mod_glyph)
 
     def fixes(self): 
-        fixes = self.config.get("fixes", {}):
+        fixes = self.config.get("fixes", {})
         for fix_name, fix_value in fixes.items():
             if fix_name == "nbspace" and fix_value:
                 self.mod_ufo[self.mod_cmap[0x00A0]].width = self.mod_ufo[self.mod_cmap[0x0020]].width
