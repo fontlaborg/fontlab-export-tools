@@ -3,25 +3,45 @@ from pathlib import Path
 import yaml
 from attrdict import AttrDict
 
+from pathlib import Path
 
-def _update_config(config_dict, ref_dict, folder, path_keys):
-    for key, value in config_dict.items():
-        if isinstance(value, str):
-            value = value.format(**ref_dict)
-            if folder and key.endswith(path_keys):
-                value = Path(folder / value).resolve()
-            config_dict[key] = value
+def _update_config(config_dict, folder, path_keys=("_path", "_folder"), parent_dict=None):
+    def update_path(value, combined_dict):
+        for key, val in combined_dict.items():
+            value = value.replace('{' + key + '}', str(val))
+        return Path(folder / value).resolve()
+
+    def process_value(value, combined_dict):
+        if isinstance(value, dict):
+            return _update_config(value, folder, path_keys, combined_dict)
         elif isinstance(value, list):
-            for item in value:
-                item = _update_config(item, ref_dict, folder, path_keys)
-    return config_dict
+            return [process_value(item, combined_dict) for item in value]
+        else:
+            return value
+
+    if parent_dict is None:
+        combined_dict = config_dict
+    else:
+        combined_dict = {**parent_dict, **config_dict}
+
+    updated_config = {}
+    for key, value in config_dict.items():
+        if any(key.endswith(path_key) for path_key in path_keys):
+            updated_config[key] = update_path(value, combined_dict)
+        else:
+            updated_config[key] = process_value(value, combined_dict)
+
+    return AttrDict(updated_config)
+
+
 
 
 def read_config(config_path, path_keys=("_path", "_folder")):
     config_path = Path(config_path).resolve()
     with open(config_path, "r") as yaml_file:
         config = AttrDict(yaml.safe_load(yaml_file))
-    config = _update_config(config, config, config_path.parent, path_keys)
+    config = _update_config(config, config_path.parent, path_keys)
+    #print(f"{config=}")
     return config
 
 
