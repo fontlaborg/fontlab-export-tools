@@ -95,7 +95,7 @@ class FontBuilder:
     def save_font(self):
         self.mod_ufo.save()
 
-    def update_font_info(self):
+    def update_font_info(self, patch=None):
         for copy_attr in self.copy_info:
             rattr = getattr(self.ref_ufo.info, copy_attr)
             attr = getattr(self.mod_info, copy_attr)
@@ -112,8 +112,16 @@ class FontBuilder:
                 )
                 setattr(self.mod_info, copy_attr, rattr)
         self.mod_info.openTypeOS2Type = []
+        if patch:
+            for copy_attr, rattr in self.config.get("fontinfo", {}).items():
+                attr = getattr(self.mod_info, copy_attr)
+                if attr != rattr:
+                    print(
+                        f"Updating `self.mod_info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
+                    )
+                    setattr(self.mod_info, copy_attr, rattr)        
 
-    def update_glyphs(self):
+    def update_glyphs(self, patch=None):
         for uni, name in self.ref_cmap.items():
             ref_glyph = self.ref_ufo[name]
             if uni in self.mod_cmap:
@@ -137,7 +145,7 @@ class FontBuilder:
                 print(f"Adding mod_glyph `{name}`")
                 self.mod_ufo.insertGlyph(mod_glyph)
 
-    def fixes(self):
+    def fixes(self, patch=None):
         fixes = self.config.get("fixes", {})
         for fix_name, fix_value in fixes.items():
             if (
@@ -150,17 +158,17 @@ class FontBuilder:
                     self.mod_cmap[0x0020]
                 ].width
 
-    def patch(self, mod_path, ref_path):
+    def patch(self, mod_path, ref_path, patch):
         self.load_fonts(mod_path, ref_path)
-        self.update_font_info()
-        self.update_glyphs()
+        self.update_font_info(patch)
+        self.update_glyphs(patch)
         if self.config.get("fixes", None):
-            self.fixes()
+            self.fixes(patch)
         self.save_font()
 
     def apply_patches(self):
         for patch in self.config.fonts:
-            self.patch(mod_path=patch["ufo_path"], ref_path=patch["ref_path"])
+            self.patch(mod_path=patch["ufo_path"], ref_path=patch["ref_path"], patch=patch)
 
 
 def build_ufo(config_path):
