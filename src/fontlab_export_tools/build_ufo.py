@@ -96,19 +96,20 @@ class FontBuilder:
         self.mod_ufo.save()
 
     def update_font_info(self, patch=None):
+        filename = Path(self.mod_path).stem
         for copy_attr in self.copy_info:
             rattr = getattr(self.ref_ufo.info, copy_attr)
             attr = getattr(self.mod_info, copy_attr)
             if (type(rattr) == type(attr)) and attr != rattr:
                 print(
-                    f"Updating `self.mod_info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
+                    f"{filename}: Updating family fontinfo `{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
                 )
                 setattr(self.mod_info, copy_attr, rattr)
         for copy_attr, rattr in self.config.get("fontinfo", {}).items():
             attr = getattr(self.mod_info, copy_attr)
             if attr != rattr:
                 print(
-                    f"Updating `self.mod_info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
+                    f"{filename}: Updating family fontinfo `{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
                 )
                 setattr(self.mod_info, copy_attr, rattr)
         self.mod_info.openTypeOS2Type = []
@@ -117,24 +118,25 @@ class FontBuilder:
                 attr = getattr(self.mod_info, copy_attr)
                 if attr != rattr:
                     print(
-                        f"Updating `self.mod_info.{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
+                        f"{filename}: Updating master fontinfo `{copy_attr}`\n  from `{attr}`\n    to `{rattr}`"
                     )
                     setattr(self.mod_info, copy_attr, rattr)        
 
     def update_glyphs(self, patch=None):
+        filename = Path(self.mod_path).stem
         for uni, name in self.ref_cmap.items():
             ref_glyph = self.ref_ufo[name]
             if uni in self.mod_cmap:
                 mod_glyph = self.mod_ufo[self.mod_cmap[uni]]
                 if mod_glyph.width != ref_glyph.width:
                     print(
-                        f"Updating `{name}` width from `{mod_glyph.width}` to `{ref_glyph.width}`"
+                        f"{filename}: Updating `{name}` width from `{mod_glyph.width}` to `{ref_glyph.width}`"
                     )
                     mod_glyph.width = ref_glyph.width
             elif name in self.mod_ufo.keys():
                 mod_glyph = self.mod_ufo[name]
                 print(
-                    f"Updating unicodes for {name} from {mod_glyph.unicodes} to {ref_glyph.unicodes}"
+                    f"{filename}: Updating unicodes for {name} from {mod_glyph.unicodes} to {ref_glyph.unicodes}"
                 )
                 mod_glyph.unicodes = ref_glyph.unicodes
             else:
@@ -142,7 +144,7 @@ class FontBuilder:
                 mod_glyph.name = name
                 mod_glyph.unicodes = ref_glyph.unicodes
                 mod_glyph.width = ref_glyph.width
-                print(f"Adding mod_glyph `{name}`")
+                print(f"{filename}: Adding mod_glyph `{name}`")
                 self.mod_ufo.insertGlyph(mod_glyph)
 
     def fixes(self, patch=None):
