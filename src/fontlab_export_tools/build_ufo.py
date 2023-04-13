@@ -114,7 +114,7 @@ class FontBuilder:
                 setattr(self.mod_info, copy_attr, rattr)
         self.mod_info.openTypeOS2Type = []
         if patch:
-            for copy_attr, rattr in self.config.get("fontinfo", {}).items():
+            for copy_attr, rattr in patch.get("fontinfo", {}).items():
                 attr = getattr(self.mod_info, copy_attr)
                 if attr != rattr:
                     print(
