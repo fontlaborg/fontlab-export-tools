@@ -126,10 +126,11 @@ class FontBuilder:
             ref_glyph = self.ref_ufo[name]
             if name in self.mod_ufo.keys():
                 mod_glyph = self.mod_ufo[name]
-                print(
-                    f"{self.stem}: Updating unicodes for {name} from {mod_glyph.unicodes} to {ref_glyph.unicodes}"
-                )
-                mod_glyph.unicodes = ref_glyph.unicodes
+                if mod_glyph.unicodes != ref_glyph.unicodes:
+                    print(
+                        f"{self.stem}: Updating unicodes for {name} from {mod_glyph.unicodes} to {ref_glyph.unicodes}"
+                    )
+                    mod_glyph.unicodes = ref_glyph.unicodes
         self.mod_cmap = self.get_cmap(self.mod_ufo)
 
     def update_widths(self, patch=None):
