@@ -82,7 +82,7 @@ class FontBuilder:
             doInstructions=False,
         )
         self.ref_info = self.ref_ufo.info
-        self.ref_cmap = selg.get_cmap(self.ref_ufo)
+        self.ref_cmap = self.get_cmap(self.ref_ufo)
         self.stem = self.mod_path.stem
 
     def get_cmap(self, ufo):
